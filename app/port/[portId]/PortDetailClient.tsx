@@ -13,6 +13,7 @@ import {
 import { WaitBadge } from '@/components/WaitBadge'
 import { ReportForm } from '@/components/ReportForm'
 import { ReportsFeed } from '@/components/ReportsFeed'
+import { JustCrossedPrompt } from '@/components/JustCrossedPrompt'
 import { useAuth } from '@/lib/useAuth'
 import type { PortWaitTime, WaitTimeReading } from '@/types'
 
@@ -115,6 +116,11 @@ export function PortDetailClient({ port, portId }: Props) {
 
   return (
     <div className="space-y-4">
+      <JustCrossedPrompt
+        portId={portId}
+        portName={port.portName}
+        onSubmitted={() => setReportRefresh(r => r + 1)}
+      />
       {/* Save button */}
       {user && (
         <button

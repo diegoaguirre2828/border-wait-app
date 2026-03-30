@@ -9,7 +9,7 @@ import { fetchRgvWaitTimes } from '@/lib/cbp' // We'll use the API instead
 import { getPortMeta } from '@/lib/portMeta'
 import { getWaitLevel, waitLevelDot } from '@/lib/cbp'
 import { WaitBadge } from '@/components/WaitBadge'
-import { Bell, Star, LogOut, Map, Plus, Trash2, Route } from 'lucide-react'
+import { Bell, Star, LogOut, Map, Plus, Trash2, Route, Settings } from 'lucide-react'
 import type { PortWaitTime } from '@/types'
 
 interface SavedCrossing {
@@ -116,6 +116,9 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <Link href="/" className="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
               <Map className="w-4 h-4" />
+            </Link>
+            <Link href="/account" className="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
+              <Settings className="w-4 h-4" />
             </Link>
             <button onClick={signOut} className="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">
               <LogOut className="w-4 h-4" />
