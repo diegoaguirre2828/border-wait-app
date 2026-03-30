@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { LangProvider } from "@/lib/LangContext";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,13 +16,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cruza – How Long to Enter the US from Mexico",
+  title: "Cruza – Live US-Mexico Border Wait Times",
   description: "Live wait times to cross from Mexico into the US at all 52 border ports. Free for commuters and freight.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Cruza",
+  },
+  openGraph: {
+    title: "Cruza – Live US-Mexico Border Wait Times",
+    description: "Real-time wait times at every US-Mexico border crossing. Free for drivers and freight operators.",
+    url: "https://cruzaapp.vercel.app",
+    siteName: "Cruza",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "https://cruzaapp.vercel.app/icons/icon-512.png",
+        width: 512,
+        height: 512,
+        alt: "Cruza – Border Wait Times",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "Cruza – Live US-Mexico Border Wait Times",
+    description: "Real-time wait times at every US-Mexico border crossing.",
   },
   other: {
     "mobile-web-app-capable": "yes",
@@ -47,7 +69,8 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <LangProvider>
-        {children}
+          {children}
+          <Footer />
         </LangProvider>
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT && (
           <Script

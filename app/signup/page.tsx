@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/auth'
+import { GoogleButton } from '@/components/GoogleButton'
 
 const ROLES = [
   { value: 'driver', label: '🚛 Driver / Operator', desc: 'I cross the border for work or daily commute' },
@@ -47,7 +48,16 @@ export default function SignupPage() {
           <p className="text-sm text-gray-500 mt-1">Create your free account</p>
         </div>
 
-        <form onSubmit={handleSignup} className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
+          <GoogleButton label="Sign up with Google" />
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <form onSubmit={handleSignup} className="space-y-4">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
               {error}
@@ -80,7 +90,7 @@ export default function SignupPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="you@email.com"
             />
           </div>
@@ -93,7 +103,7 @@ export default function SignupPage() {
               onChange={e => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Min 6 characters"
             />
           </div>
@@ -105,7 +115,7 @@ export default function SignupPage() {
                 type="text"
                 value={company}
                 onChange={e => setCompany(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Your company name"
               />
             </div>
@@ -118,7 +128,8 @@ export default function SignupPage() {
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
-        </form>
+          </form>
+        </div>
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Already have an account?{' '}
