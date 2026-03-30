@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RGV Border Wait Times",
-  description: "Live and predicted US-Mexico border crossing wait times for the Rio Grande Valley",
+  title: "Border Wait Times – Live US-Mexico Crossings",
+  description: "Live and predicted US-Mexico border crossing wait times. Free for commuters.",
 };
 
 export default function RootLayout({

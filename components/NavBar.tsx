@@ -10,27 +10,24 @@ export function NavBar() {
 
   return (
     <div className="flex items-center gap-2 mt-1">
+      <Link href="/pricing" className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors">
+        Pricing
+      </Link>
       {user ? (
         <>
-          <Link
-            href="/fleet"
-            className="flex items-center gap-1 text-xs font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition-colors"
-          >
-            <Truck className="w-3 h-3" /> Fleet
-          </Link>
           <Link
             href="/dashboard"
             className="flex items-center gap-1 text-xs font-medium text-white bg-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-700 transition-colors"
           >
-            <User className="w-3 h-3" /> Dashboard
+            <User className="w-3 h-3" /> Me
           </Link>
         </>
       ) : (
         <Link
-          href="/login"
+          href="/signup"
           className="text-xs font-medium text-white bg-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-700 transition-colors"
         >
-          Sign In
+          Sign Up Free
         </Link>
       )}
     </div>
