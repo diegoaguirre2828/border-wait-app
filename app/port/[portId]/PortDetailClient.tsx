@@ -11,6 +11,8 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { WaitBadge } from '@/components/WaitBadge'
+import { ReportForm } from '@/components/ReportForm'
+import { ReportsFeed } from '@/components/ReportsFeed'
 import type { PortWaitTime, WaitTimeReading } from '@/types'
 
 interface Props {
@@ -35,6 +37,7 @@ export function PortDetailClient({ port, portId }: Props) {
   const [history, setHistory] = useState<WaitTimeReading[]>([])
   const [bestTimes, setBestTimes] = useState<BestTime[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
+  const [reportRefresh, setReportRefresh] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -163,6 +166,18 @@ export function PortDetailClient({ port, portId }: Props) {
           </div>
         </div>
       )}
+
+      {/* Driver reports feed */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Driver Reports</h2>
+        <ReportsFeed portId={portId} refresh={reportRefresh} />
+      </div>
+
+      {/* Submit report */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Submit a Report</h2>
+        <ReportForm portId={portId} onSubmitted={() => setReportRefresh(r => r + 1)} />
+      </div>
 
       {/* Pro teaser */}
       <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center">
