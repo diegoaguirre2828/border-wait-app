@@ -54,6 +54,7 @@ export function PortDetailClient({ port, portId }: Props) {
   const [reportRefresh, setReportRefresh] = useState(0)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [showAlertNudge, setShowAlertNudge] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -98,6 +99,7 @@ export function PortDetailClient({ port, portId }: Props) {
     if (saved) {
       await fetch(`/api/saved?portId=${encodeURIComponent(portId)}`, { method: 'DELETE' })
       setSaved(false)
+      setShowAlertNudge(false)
     } else {
       await fetch('/api/saved', {
         method: 'POST',
@@ -105,6 +107,7 @@ export function PortDetailClient({ port, portId }: Props) {
         body: JSON.stringify({ portId }),
       })
       setSaved(true)
+      if (!canAccess(tier, 'alerts')) setShowAlertNudge(true)
     }
     setSaving(false)
   }
@@ -137,6 +140,22 @@ export function PortDetailClient({ port, portId }: Props) {
         >
           {saved ? '⭐ Saved to Dashboard' : '☆ Save to Dashboard'}
         </button>
+      )}
+
+      {/* Alert nudge after saving */}
+      {showAlertNudge && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-blue-800">🔔 Get notified when it drops</p>
+            <p className="text-xs text-blue-600 mt-0.5">Upgrade to Pro to set a wait time alert for this crossing.</p>
+          </div>
+          <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+            <Link href="/pricing" className="text-xs font-semibold text-white bg-blue-600 px-3 py-1.5 rounded-xl hover:bg-blue-700 transition-colors">
+              Pro →
+            </Link>
+            <button onClick={() => setShowAlertNudge(false)} className="text-blue-400 hover:text-blue-600 text-lg leading-none">×</button>
+          </div>
+        </div>
       )}
 
       {/* Current wait times */}

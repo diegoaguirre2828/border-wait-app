@@ -154,6 +154,16 @@ export function PortList() {
             </select>
           </div>
 
+          {/* Legend */}
+          <div className="flex items-center gap-4 mb-3 px-1">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /> Live data
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <span className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0" /> No data / closed
+            </div>
+          </div>
+
           {view === 'map' && (
             <div className="mb-4">
               <BorderMap
