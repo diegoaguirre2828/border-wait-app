@@ -1,4 +1,7 @@
+'use client'
+
 import { getWaitLevel, waitLevelColor } from '@/lib/cbp'
+import { useLang } from '@/lib/LangContext'
 
 interface Props {
   minutes: number | null
@@ -6,12 +9,13 @@ interface Props {
 }
 
 export function WaitBadge({ minutes, label }: Props) {
+  const { t } = useLang()
   const level = getWaitLevel(minutes)
   const colors = waitLevelColor(level)
 
   const display =
     minutes === null ? '—' :
-    minutes === 0 ? 'Closed' :
+    minutes === 0 ? t.closed :
     `${minutes} min`
 
   return (

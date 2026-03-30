@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTier } from '@/lib/useTier'
+import { useLang } from '@/lib/LangContext'
 import { AdsenseBlock } from './AdsenseBlock'
 import { AdCard } from './AdCard'
 import Link from 'next/link'
@@ -18,6 +19,7 @@ interface Ad {
 
 export function GuestAds() {
   const { tier, loading } = useTier()
+  const { t } = useLang()
   const [localAd, setLocalAd] = useState<Ad | null>(null)
 
   // Fetch a local business ad for free users
@@ -53,9 +55,9 @@ export function GuestAds() {
       <AdsenseBlock slot="1234567890" />
       <p className="text-center text-xs text-gray-400 mt-2">
         <Link href="/signup" className="text-gray-600 font-medium hover:underline">
-          Create a free account
+          {t.createAccount}
         </Link>{' '}
-        to see local deals instead of ads
+        {t.toSeeLocalDeals}
       </p>
     </div>
   )

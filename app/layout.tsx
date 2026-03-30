@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { LangProvider } from "@/lib/LangContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -45,7 +46,9 @@ export default function RootLayout({
         <meta name="google-adsense-account" content="ca-pub-8997191973110385" />
       </head>
       <body className="min-h-full flex flex-col">
+        <LangProvider>
         {children}
+        </LangProvider>
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT && (
           <Script
             async

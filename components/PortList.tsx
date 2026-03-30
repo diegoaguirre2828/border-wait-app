@@ -7,6 +7,7 @@ import { BorderMap } from './BorderMap'
 import type { PortWaitTime } from '@/types'
 import { RefreshCw, Map, List } from 'lucide-react'
 import { ALL_REGIONS, getPortMeta } from '@/lib/portMeta'
+import { useLang } from '@/lib/LangContext'
 
 const REFRESH_INTERVAL = 5 * 60 * 1000
 
@@ -14,6 +15,7 @@ type Direction = 'entering_us' | 'entering_mexico'
 
 export function PortList() {
   const router = useRouter()
+  const { t } = useLang()
   const [ports, setPorts] = useState<PortWaitTime[]>([])
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -80,13 +82,13 @@ export function PortList() {
           onClick={() => setDirection('entering_us')}
           className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${direction === 'entering_us' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
         >
-          🇺🇸 Entering the US
+          {t.enteringUS}
         </button>
         <button
           onClick={() => setDirection('entering_mexico')}
           className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${direction === 'entering_mexico' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
         >
-          🇲🇽 Entering Mexico
+          {t.enteringMexico}
         </button>
       </div>
 
@@ -94,19 +96,12 @@ export function PortList() {
       {direction === 'entering_mexico' && (
         <div className="space-y-3 mb-4">
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
-            <p className="text-sm font-semibold text-amber-800">Mexico-side wait times</p>
-            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-              No official data exists for crossing into Mexico — Mexico doesn't publish wait times publicly.
-              Wait times entering Mexico are typically under 5 minutes.
-            </p>
+            <p className="text-sm font-semibold text-amber-800">{t.mexicoSideTitle}</p>
+            <p className="text-xs text-amber-700 mt-1 leading-relaxed">{t.mexicoSideDesc}</p>
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-700 mb-1">💡 Community tip</p>
-            <p className="text-xs text-gray-600 leading-relaxed">
-              Returning to Mexico is usually quick — Mexican customs rarely causes delays.
-              Busy periods are Friday afternoons and weekends when US-side shoppers return.
-              Check the <span className="font-semibold">Entering US</span> tab to plan your return trip.
-            </p>
+            <p className="text-xs font-semibold text-gray-700 mb-1">{t.communityTip}</p>
+            <p className="text-xs text-gray-600 leading-relaxed">{t.communityTipDesc}</p>
           </div>
         </div>
       )}
@@ -119,7 +114,7 @@ export function PortList() {
               {error ? (
                 <span className="text-amber-500">{error}</span>
               ) : timeAgo !== null ? (
-                <span>Updated {timeAgo === 0 ? 'just now' : `${timeAgo}m ago`}</span>
+                <span>{timeAgo === 0 ? t.updatedJustNow : t.updatedAgo(timeAgo)}</span>
               ) : null}
             </div>
             <div className="flex items-center gap-2">
@@ -128,13 +123,13 @@ export function PortList() {
                   onClick={() => setView('list')}
                   className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${view === 'list' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
                 >
-                  <List className="w-3 h-3" /> List
+                  <List className="w-3 h-3" /> {t.list}
                 </button>
                 <button
                   onClick={() => setView('map')}
                   className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${view === 'map' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
                 >
-                  <Map className="w-3 h-3" /> Map
+                  <Map className="w-3 h-3" /> {t.map}
                 </button>
               </div>
               <button
@@ -154,7 +149,7 @@ export function PortList() {
               className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {ALL_REGIONS.map(r => (
-                <option key={r} value={r}>{r === 'All' ? '📍 All Regions' : r}</option>
+                <option key={r} value={r}>{r === 'All' ? t.allRegions : r}</option>
               ))}
             </select>
           </div>
