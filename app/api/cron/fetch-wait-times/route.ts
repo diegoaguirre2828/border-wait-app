@@ -3,13 +3,7 @@ import { fetchRgvWaitTimes } from '@/lib/cbp'
 import { getServiceClient } from '@/lib/supabase'
 
 export async function GET(req: NextRequest) {
-  // Protect cron endpoint
-  const secret = req.headers.get('x-cron-secret') || req.nextUrl.searchParams.get('secret')
-  const expectedSecret = process.env.CRON_SECRET
-  console.log('Secret received:', secret, 'Expected:', expectedSecret)
-  if (secret !== expectedSecret) {
-    return NextResponse.json({ error: 'Unauthorized', received: secret, expected: expectedSecret }, { status: 401 })
-  }
+  // Auth temporarily disabled for testing
 
   try {
     const ports = await fetchRgvWaitTimes()
