@@ -10,9 +10,6 @@ export function NavBar() {
 
   return (
     <div className="flex items-center gap-2 mt-1">
-      <Link href="/pricing" className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors">
-        Pricing
-      </Link>
       {user ? (
         <>
           <Link

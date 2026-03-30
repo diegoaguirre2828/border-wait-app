@@ -17,6 +17,11 @@ export function PortCard({ port }: Props) {
   const primaryWait = port.vehicle ?? port.pedestrian
   const [shared, setShared] = useState(false)
 
+  // Rough estimate: ~3 cars processed per minute at a typical crossing
+  const carsAhead = primaryWait !== null && primaryWait > 0
+    ? Math.round(primaryWait * 3)
+    : null
+
   function handleShare(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
@@ -55,8 +60,19 @@ export function PortCard({ port }: Props) {
           <div className="flex items-center gap-2">
             {primaryWait !== null && (
               <div className="text-right">
-                <span className="text-2xl font-bold text-gray-900">{primaryWait}</span>
-                <span className="text-xs text-gray-400 ml-1">min</span>
+                {primaryWait === 0 ? (
+                  <span className="text-sm font-bold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-xl">Closed</span>
+                ) : (
+                  <>
+                    <div>
+                      <span className="text-2xl font-bold text-gray-900">{primaryWait}</span>
+                      <span className="text-xs text-gray-400 ml-1">min</span>
+                    </div>
+                    {carsAhead !== null && (
+                      <p className="text-xs text-gray-400 text-right">~{carsAhead} cars</p>
+                    )}
+                  </>
+                )}
               </div>
             )}
             <button
