@@ -1,19 +1,21 @@
 import { PortList } from '@/components/PortList'
+import { NavBar } from '@/components/NavBar'
 
 export const metadata = {
-  title: 'RGV Border Wait Times',
-  description: 'Live and predicted wait times for all RGV US-Mexico border crossings',
+  title: 'Border Wait Times – Live US-Mexico Crossings',
+  description: 'Live and predicted wait times for all US-Mexico border crossings',
 }
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-lg mx-auto px-4 pb-10">
-        <div className="pt-8 pb-4">
-          <h1 className="text-2xl font-bold text-gray-900">🌉 RGV Border Waits</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Live wait times · US-Mexico crossings
-          </p>
+        <div className="pt-8 pb-2 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">🌉 Border Waits</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Live US-Mexico crossing times</p>
+          </div>
+          <NavBar />
         </div>
 
         <div className="flex gap-4 mb-4 text-xs text-gray-500">

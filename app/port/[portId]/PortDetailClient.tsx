@@ -13,7 +13,15 @@ import {
 import { WaitBadge } from '@/components/WaitBadge'
 import { ReportForm } from '@/components/ReportForm'
 import { ReportsFeed } from '@/components/ReportsFeed'
+import { useAuth } from '@/lib/useAuth'
 import type { PortWaitTime, WaitTimeReading } from '@/types'
+
+interface Prediction {
+  datetime: string
+  hour: number
+  predictedWait: number | null
+  confidence: string
+}
 
 interface Props {
   port: PortWaitTime
@@ -34,17 +42,22 @@ function formatHour(hour: number): string {
 }
 
 export function PortDetailClient({ port, portId }: Props) {
+  const { user } = useAuth()
   const [history, setHistory] = useState<WaitTimeReading[]>([])
   const [bestTimes, setBestTimes] = useState<BestTime[]>([])
+  const [predictions, setPredictions] = useState<Prediction[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
   const [reportRefresh, setReportRefresh] = useState(0)
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     async function load() {
       try {
-        const [histRes, bestRes] = await Promise.all([
+        const [histRes, bestRes, predRes] = await Promise.all([
           fetch(`/api/ports/${encodeURIComponent(portId)}/history`),
           fetch(`/api/ports/${encodeURIComponent(portId)}/best-times`),
+          fetch(`/api/predictions?portId=${encodeURIComponent(portId)}`),
         ])
         if (histRes.ok) {
           const { history } = await histRes.json()
@@ -53,6 +66,10 @@ export function PortDetailClient({ port, portId }: Props) {
         if (bestRes.ok) {
           const { bestTimes } = await bestRes.json()
           setBestTimes(bestTimes || [])
+        }
+        if (predRes.ok) {
+          const { predictions } = await predRes.json()
+          setPredictions(predictions || [])
         }
       } finally {
         setLoadingHistory(false)
@@ -71,8 +88,48 @@ export function PortDetailClient({ port, portId }: Props) {
     pedestrian: r.pedestrian_wait,
   }))
 
+  async function toggleSave() {
+    if (!user) return
+    setSaving(true)
+    if (saved) {
+      await fetch(`/api/saved?portId=${encodeURIComponent(portId)}`, { method: 'DELETE' })
+      setSaved(false)
+    } else {
+      await fetch('/api/saved', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ portId }),
+      })
+      setSaved(true)
+    }
+    setSaving(false)
+  }
+
+  const predictionChartData = predictions
+    .filter(p => p.predictedWait !== null)
+    .map(p => ({
+      time: new Date(p.datetime).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
+      predicted: p.predictedWait,
+      confidence: p.confidence,
+    }))
+
   return (
     <div className="space-y-4">
+      {/* Save button */}
+      {user && (
+        <button
+          onClick={toggleSave}
+          disabled={saving}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+            saved
+              ? 'bg-yellow-50 border-yellow-300 text-yellow-700'
+              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          {saved ? '⭐ Saved to Dashboard' : '☆ Save to Dashboard'}
+        </button>
+      )}
+
       {/* Current wait times */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-gray-700 mb-4">Current Wait Times</h2>
@@ -143,6 +200,26 @@ export function PortDetailClient({ port, portId }: Props) {
           <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-emerald-500 inline-block" /> Pedestrian</span>
         </div>
       </div>
+
+      {/* AI Predictions */}
+      {predictionChartData.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700">AI Prediction – Next 24 Hours</h2>
+            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Beta</span>
+          </div>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={predictionChartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="time" tick={{ fontSize: 9 }} interval="preserveStartEnd" />
+              <YAxis tick={{ fontSize: 10 }} unit=" min" width={45} />
+              <Tooltip formatter={(value) => [`${value} min`, 'Predicted']} contentStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="predicted" stroke="#8b5cf6" strokeWidth={2} dot={false} strokeDasharray="5 3" name="Predicted" />
+            </LineChart>
+          </ResponsiveContainer>
+          <p className="text-xs text-gray-400 mt-2">Based on historical patterns for this crossing</p>
+        </div>
+      )}
 
       {/* Best times today */}
       {bestTimes.length > 0 && (
