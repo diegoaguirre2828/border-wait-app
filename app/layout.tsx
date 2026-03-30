@@ -42,6 +42,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
         <meta name="theme-color" content="#111827" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="google-adsense-account" content="ca-pub-8997191973110385" />
       </head>
       <body className="min-h-full flex flex-col">
         {children}
