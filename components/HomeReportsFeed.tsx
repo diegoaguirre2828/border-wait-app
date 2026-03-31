@@ -96,9 +96,6 @@ export function HomeReportsFeed() {
           </div>
         </Link>
       ))}
-      <Link href="/leaderboard" className="block text-center text-xs text-blue-500 hover:underline py-2">
-        {lang === 'es' ? 'Ver tabla de líderes →' : 'View leaderboard →'}
-      </Link>
     </div>
   )
 }

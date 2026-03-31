@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { PortCard } from './PortCard'
 import { BorderMap } from './BorderMap'
 import type { PortWaitTime } from '@/types'
-import { RefreshCw, Map, List, Navigation, X } from 'lucide-react'
+import { RefreshCw, Map, List, Navigation, X, Share2, Check } from 'lucide-react'
 import { ALL_REGIONS, getPortMeta } from '@/lib/portMeta'
 import { useLang } from '@/lib/LangContext'
 
@@ -14,7 +14,7 @@ const REFRESH_INTERVAL = 5 * 60 * 1000
 type Direction = 'entering_us' | 'entering_mexico'
 
 function haversineMi(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 3958.8 // Earth radius in miles
+  const R = 3958.8
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLng = (lng2 - lng1) * Math.PI / 180
   const a =
@@ -25,9 +25,26 @@ function haversineMi(lat1: number, lng1: number, lat2: number, lng2: number): nu
 
 function distLabel(mi: number, lang: string): string {
   if (mi < 0.5) return lang === 'es' ? 'Muy cerca' : 'Very close'
-  if (mi < 1) return lang === 'es' ? `${(mi * 5280).toFixed(0)} pies` : `${(mi * 5280).toFixed(0)} ft`
   return `${mi.toFixed(1)} mi`
 }
+
+const MEX_CROSSINGS = [
+  { portId: '230501', name: 'McAllen / Hidalgo' },
+  { portId: '230502', name: 'Pharr–Reynosa' },
+  { portId: '230503', name: 'Anzaldúas' },
+  { portId: '230901', name: 'Progreso' },
+  { portId: '230902', name: 'Donna' },
+  { portId: '230701', name: 'Rio Grande City' },
+  { portId: '231001', name: 'Roma' },
+  { portId: '535501', name: 'Brownsville Gateway' },
+  { portId: '535502', name: 'Brownsville Veterans' },
+  { portId: '230401', name: 'Laredo I' },
+  { portId: '230402', name: 'Laredo II' },
+  { portId: '230301', name: 'Eagle Pass I' },
+  { portId: '240201', name: 'El Paso' },
+  { portId: '250401', name: 'San Ysidro' },
+  { portId: '250601', name: 'Otay Mesa' },
+]
 
 export function PortList() {
   const router = useRouter()
@@ -47,6 +64,14 @@ export function PortList() {
   const [nearMe, setNearMe] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
   const [geoError, setGeoError] = useState<string | null>(null)
+
+  // Share
+  const [shareLabel, setShareLabel] = useState<'idle' | 'copied'>('idle')
+
+  // Mexico quick report
+  const [mexPortId, setMexPortId] = useState(MEX_CROSSINGS[0].portId)
+  const [mexSubmitting, setMexSubmitting] = useState(false)
+  const [mexSubmitted, setMexSubmitted] = useState(false)
 
   const fetchPorts = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
@@ -73,11 +98,7 @@ export function PortList() {
   }, [fetchPorts])
 
   function requestNearMe() {
-    if (nearMe) {
-      setNearMe(false)
-      setGeoError(null)
-      return
-    }
+    if (nearMe) { setNearMe(false); setGeoError(null); return }
     if (!navigator.geolocation) {
       setGeoError(lang === 'es' ? 'Geolocalización no disponible' : 'Geolocation not available')
       return
@@ -85,31 +106,54 @@ export function PortList() {
     setGeoLoading(true)
     setGeoError(null)
     navigator.geolocation.getCurrentPosition(
-      pos => {
-        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setNearMe(true)
-        setGeoLoading(false)
-      },
-      () => {
-        setGeoError(lang === 'es' ? 'No se pudo obtener tu ubicación' : 'Could not get your location')
-        setGeoLoading(false)
-      },
+      pos => { setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setNearMe(true); setGeoLoading(false) },
+      () => { setGeoError(lang === 'es' ? 'No se pudo obtener tu ubicación' : 'Could not get your location'); setGeoLoading(false) },
       { timeout: 8000 }
     )
+  }
+
+  function handleShare() {
+    const list = (selectedRegion === 'All' ? ports : ports.filter(p => getPortMeta(p.portId).region === selectedRegion))
+      .filter(p => p.vehicle !== null)
+      .slice(0, 10)
+      .map(p => `🚗 ${p.portName}: ${p.vehicle === 0 ? '<1' : p.vehicle} min`)
+      .join('\n')
+
+    const text = lang === 'es'
+      ? `🌉 Tiempos de espera en la frontera ahora mismo:\n\n${list}\n\n📱 Tiempos en vivo: cruza.app`
+      : `🌉 Border wait times right now:\n\n${list}\n\n📱 Live updates: cruza.app`
+
+    if (navigator.share) {
+      navigator.share({ text }).catch(() => {})
+    } else {
+      navigator.clipboard.writeText(text).catch(() => {})
+    }
+    setShareLabel('copied')
+    setTimeout(() => setShareLabel('idle'), 2500)
+  }
+
+  async function submitMexReport(condition: string) {
+    setMexSubmitting(true)
+    await fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portId: mexPortId, condition, direction: 'mexico' }),
+    }).catch(() => {})
+    setMexSubmitting(false)
+    setMexSubmitted(true)
+    setTimeout(() => setMexSubmitted(false), 4000)
   }
 
   const filteredPorts = selectedRegion === 'All'
     ? ports
     : ports.filter(p => getPortMeta(p.portId).region === selectedRegion)
 
-  // Sorted by distance when Near Me is active
   const sortedByDistance = userLoc
     ? [...ports]
         .map(p => ({ port: p, dist: haversineMi(userLoc.lat, userLoc.lng, getPortMeta(p.portId).lat, getPortMeta(p.portId).lng) }))
         .sort((a, b) => a.dist - b.dist)
     : []
 
-  // Group by region for normal list view
   const grouped = filteredPorts.reduce<Record<string, PortWaitTime[]>>((acc, port) => {
     const region = getPortMeta(port.portId).region
     if (!acc[region]) acc[region] = []
@@ -117,10 +161,7 @@ export function PortList() {
     return acc
   }, {})
 
-  const timeAgo = fetchedAt
-    ? Math.round((Date.now() - new Date(fetchedAt).getTime()) / 1000 / 60)
-    : null
-
+  const timeAgo = fetchedAt ? Math.round((Date.now() - new Date(fetchedAt).getTime()) / 1000 / 60) : null
   const cbpTime = cbpUpdatedAt
     ? new Date(cbpUpdatedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
     : null
@@ -153,21 +194,71 @@ export function PortList() {
         </button>
       </div>
 
-      {/* Entering Mexico — community only */}
+      {/* ── ENTERING MEXICO ── */}
       {direction === 'entering_mexico' && (
-        <div className="space-y-3 mb-4">
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-center">
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{t.mexicoSideTitle}</p>
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 leading-relaxed">{t.mexicoSideDesc}</p>
+        <div className="space-y-4 mb-4">
+
+          {/* Community quick report */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm">
+            <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">
+              {lang === 'es' ? '🇲🇽 ¿Cómo está el cruce a México?' : '🇲🇽 How\'s the crossing into Mexico?'}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              {lang === 'es'
+                ? 'Ayuda a otros reportando las condiciones ahora mismo.'
+                : 'Help others by reporting conditions right now.'}
+            </p>
+
+            <select
+              value={mexPortId}
+              onChange={e => setMexPortId(e.target.value)}
+              className="w-full mb-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {MEX_CROSSINGS.map(c => <option key={c.portId} value={c.portId}>{c.name}</option>)}
+            </select>
+
+            {mexSubmitted ? (
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-3 text-center">
+                <p className="text-sm font-bold text-green-700 dark:text-green-400">
+                  {lang === 'es' ? '✅ ¡Gracias! Tu reporte ayuda a todos.' : '✅ Thanks! Your report helps everyone.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { cond: 'fast',   emoji: '🟢', label: lang === 'es' ? 'Rápido' : 'Fast' },
+                  { cond: 'normal', emoji: '🟡', label: lang === 'es' ? 'Normal' : 'Normal' },
+                  { cond: 'slow',   emoji: '🔴', label: lang === 'es' ? 'Lento' : 'Slow' },
+                ].map(({ cond, emoji, label }) => (
+                  <button
+                    key={cond}
+                    onClick={() => submitMexReport(cond)}
+                    disabled={mexSubmitting}
+                    className="flex flex-col items-center gap-1 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-40 active:scale-95"
+                  >
+                    <span className="text-xl">{emoji}</span>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{t.communityTip}</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{t.communityTipDesc}</p>
+
+          {/* Community tip */}
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1">{t.communityTip}</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">{t.communityTipDesc}</p>
           </div>
+
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center px-4">
+            {lang === 'es'
+              ? 'México no publica tiempos oficiales. Esta información es reportada por la comunidad.'
+              : 'Mexico doesn\'t publish official wait times. This data is community-reported.'}
+          </p>
         </div>
       )}
 
-      {/* Entering US — full controls + list */}
+      {/* ── ENTERING US ── */}
       {direction === 'entering_us' && (
         <>
           <div className="flex items-center justify-between mb-3">
@@ -175,7 +266,7 @@ export function PortList() {
               {error ? (
                 <span className="text-amber-500">{error}</span>
               ) : cbpTime ? (
-                <span>CBP data as of {cbpTime}</span>
+                <span>CBP {lang === 'es' ? 'actualizado' : 'as of'} {cbpTime}</span>
               ) : timeAgo !== null ? (
                 <span>{timeAgo === 0 ? t.updatedJustNow : t.updatedAgo(timeAgo)}</span>
               ) : null}
@@ -205,7 +296,7 @@ export function PortList() {
             </div>
           </div>
 
-          {/* Near Me + Region selector row */}
+          {/* Near Me + Region row */}
           <div className="mb-4 space-y-2">
             <div className="flex items-center gap-2">
               <button
@@ -217,14 +308,8 @@ export function PortList() {
                     : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-blue-400'
                 }`}
               >
-                {geoLoading ? (
-                  <RefreshCw className="w-3 h-3 animate-spin" />
-                ) : nearMe ? (
-                  <X className="w-3 h-3" />
-                ) : (
-                  <Navigation className="w-3 h-3" />
-                )}
-                {lang === 'es' ? 'Cerca de mí' : 'Near Me'}
+                {geoLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : nearMe ? <X className="w-3 h-3" /> : <Navigation className="w-3 h-3" />}
+                {lang === 'es' ? 'Cerca' : 'Near Me'}
               </button>
 
               {!nearMe && (
@@ -242,27 +327,34 @@ export function PortList() {
 
               {nearMe && (
                 <p className="flex-1 text-xs text-blue-600 dark:text-blue-400 font-medium">
-                  {lang === 'es' ? 'Ordenado por distancia a ti' : 'Sorted by distance from you'}
+                  {lang === 'es' ? 'Ordenado por distancia' : 'Sorted by distance'}
                 </p>
               )}
             </div>
-
-            {geoError && (
-              <p className="text-xs text-red-500 dark:text-red-400 px-1">{geoError}</p>
-            )}
+            {geoError && <p className="text-xs text-red-500 dark:text-red-400 px-1">{geoError}</p>}
           </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-4 mb-3 px-1">
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-              <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /> {t.legendNoWait}
+          {/* Legend + Share row */}
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /> {t.legendNoWait}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <span className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0" /> {t.midMin}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /> {t.overMin}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-              <span className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0" /> {t.midMin}
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-              <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /> {t.overMin}
-            </div>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              title={lang === 'es' ? 'Compartir en grupo de Facebook' : 'Share to Facebook group'}
+            >
+              {shareLabel === 'copied' ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{shareLabel === 'copied' ? (lang === 'es' ? '¡Copiado!' : 'Copied!') : (lang === 'es' ? 'Compartir' : 'Share')}</span>
+            </button>
           </div>
 
           {view === 'map' && (
@@ -276,7 +368,6 @@ export function PortList() {
             </div>
           )}
 
-          {/* Near Me sorted list */}
           {view === 'list' && nearMe && userLoc && (
             <div className="space-y-3">
               <h2 className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2 px-1 flex items-center gap-1">
@@ -294,7 +385,6 @@ export function PortList() {
             </div>
           )}
 
-          {/* Normal grouped list */}
           {view === 'list' && !nearMe && (
             <div className="space-y-5">
               {Object.entries(grouped).map(([region, regionPorts]) => (
