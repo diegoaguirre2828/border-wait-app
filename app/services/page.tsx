@@ -87,6 +87,16 @@ const CATEGORIES = [
     iconBg: 'bg-indigo-100 dark:bg-indigo-900/40',
     link: '/insurance',
   },
+  {
+    id: 'other',
+    emoji: '🏪',
+    en: 'Other',
+    es: 'Otro',
+    descEn: 'Shopping, crafts, furniture, clothing, and more — Mexico has it all.',
+    descEs: 'Compras, artesanías, muebles, ropa y más — México lo tiene todo.',
+    color: 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700',
+    iconBg: 'bg-gray-100 dark:bg-gray-700',
+  },
 ]
 
 const TIPS = {
@@ -109,12 +119,21 @@ const TIPS = {
 export default function ServicesPage() {
   const { lang } = useLang()
   const [showListForm, setShowListForm] = useState(false)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '', category: 'auto', city: '', address: '',
     phone: '', website: '', description: '', email: '',
   })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  function openCategory(catId: string) {
+    setActiveCategory(catId)
+    // Scroll to listings section
+    setTimeout(() => {
+      document.getElementById('category-listings')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -169,7 +188,11 @@ export default function ServicesPage() {
         {/* Categories grid */}
         <div className="space-y-3 mb-6">
           {CATEGORIES.filter(c => c.id !== 'insurance').map(cat => (
-            <div key={cat.id} className={`rounded-2xl border p-4 ${cat.color}`}>
+            <button
+              key={cat.id}
+              onClick={() => openCategory(cat.id)}
+              className={`w-full rounded-2xl border p-4 text-left transition-all ${cat.color} ${activeCategory === cat.id ? 'ring-2 ring-blue-500' : 'hover:opacity-90'}`}
+            >
               <div className="flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${cat.iconBg}`}>
                   {cat.emoji}
@@ -182,10 +205,55 @@ export default function ServicesPage() {
                     {lang === 'es' ? cat.descEs : cat.descEn}
                   </p>
                 </div>
+                <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
               </div>
-            </div>
+            </button>
           ))}
         </div>
+
+        {/* Category listings panel — shown when a category is selected */}
+        {activeCategory && (() => {
+          const cat = CATEGORIES.find(c => c.id === activeCategory)
+          if (!cat) return null
+          return (
+            <div id="category-listings" className={`rounded-2xl border p-5 mb-6 ${cat.color}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                  {cat.emoji} {lang === 'es' ? cat.es : cat.en}
+                </h2>
+                <button
+                  onClick={() => setActiveCategory(null)}
+                  className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {lang === 'es' ? 'Ver todo' : 'See all'}
+                </button>
+              </div>
+              {/* Placeholder — real sponsored listings will render here */}
+              <div className="bg-white/60 dark:bg-gray-900/40 rounded-xl px-4 py-5 text-center">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  {lang === 'es' ? '🔜 ¡Pronto habrá negocios aquí!' : '🔜 Sponsored businesses coming soon!'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">
+                  {lang === 'es'
+                    ? '¿Tienes un negocio de este tipo? Sé el primero en aparecer aquí.'
+                    : 'Own a business in this category? Be the first to get listed here.'}
+                </p>
+                <button
+                  onClick={() => {
+                    setFormData(f => ({ ...f, category: cat.id }))
+                    setShowListForm(true)
+                    setTimeout(() => {
+                      document.getElementById('list-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }, 50)
+                  }}
+                  className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  {lang === 'es' ? 'Listar mi negocio →' : 'List my business →'}
+                </button>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Crossing tips */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 mb-6 shadow-sm">
@@ -221,7 +289,7 @@ export default function ServicesPage() {
 
         {/* Business listing form */}
         {showListForm && !submitted && (
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm mb-4">
+          <form id="list-form" onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm mb-4">
             <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">
               {lang === 'es' ? 'Listar mi negocio' : 'List my business'}
             </h2>

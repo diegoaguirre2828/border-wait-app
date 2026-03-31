@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/useAuth'
+import { useLang } from '@/lib/LangContext'
 import { Building2, Truck, ChevronRight, Wifi } from 'lucide-react'
 
 interface Driver {
@@ -22,7 +23,7 @@ const STATUS_DOT: Record<string, string> = {
   delivered:  'bg-gray-300',
 }
 
-const STATUS_LABEL: Record<string, string> = {
+const STATUS_LABEL_EN: Record<string, string> = {
   available:  'Available',
   en_route:   'En Route',
   in_line:    'In Line',
@@ -31,16 +32,26 @@ const STATUS_LABEL: Record<string, string> = {
   delivered:  'Delivered',
 }
 
-function timeAgo(iso: string | null): string {
+const STATUS_LABEL_ES: Record<string, string> = {
+  available:  'Disponible',
+  en_route:   'En camino',
+  in_line:    'En fila',
+  at_bridge:  'En el puente',
+  cleared:    'Pasó',
+  delivered:  'Entregado',
+}
+
+function timeAgo(iso: string | null, lang: string): string {
   if (!iso) return ''
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  return `${Math.round(mins / 60)}h ago`
+  if (mins < 1) return lang === 'es' ? 'ahora mismo' : 'just now'
+  if (mins < 60) return lang === 'es' ? `hace ${mins}m` : `${mins}m ago`
+  return lang === 'es' ? `hace ${Math.round(mins / 60)}h` : `${Math.round(mins / 60)}h ago`
 }
 
 export function BusinessCommandWidget() {
   const { user, loading: authLoading } = useAuth()
+  const { lang } = useLang()
   const [tier, setTier] = useState<string | null>(null)
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [loadingDrivers, setLoadingDrivers] = useState(false)
@@ -69,34 +80,52 @@ export function BusinessCommandWidget() {
   const cleared = drivers.filter(d => d.current_status === 'cleared')
   const other = drivers.filter(d => !['en_route', 'in_line', 'at_bridge', 'cleared'].includes(d.current_status))
 
+  const STATUS_LABEL = lang === 'es' ? STATUS_LABEL_ES : STATUS_LABEL_EN
+
+  const txt = {
+    title:        lang === 'es' ? 'Centro de Comando'          : 'Business Command Center',
+    live:         lang === 'es' ? 'En vivo'                    : 'Live',
+    fullPortal:   lang === 'es' ? 'Portal Completo'            : 'Full Portal',
+    loading:      lang === 'es' ? 'Cargando estado de flota…'  : 'Loading fleet status...',
+    noDrivers:    lang === 'es' ? 'No hay conductores aún.'    : 'No drivers added yet.',
+    addFirst:     lang === 'es' ? 'Agrega tu primer conductor →' : 'Add your first driver →',
+    active:       lang === 'es' ? 'Activos'                    : 'Active',
+    cleared:      lang === 'es' ? 'Pasaron'                    : 'Cleared',
+    total:        lang === 'es' ? 'Total'                      : 'Total',
+    dispatch:     lang === 'es' ? 'Despacho'                   : 'Dispatch',
+    loads:        lang === 'es' ? 'Cargas'                     : 'Loads',
+    costs:        lang === 'es' ? 'Costos'                     : 'Costs',
+    moreDrivers:  (n: number) => lang === 'es' ? `+${n} conductores más →` : `+${n} more drivers →`,
+  }
+
   return (
     <div className="mb-4 bg-blue-600 dark:bg-blue-700 rounded-2xl overflow-hidden shadow-lg">
       {/* Header */}
       <div className="px-4 pt-4 pb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4 text-blue-100" />
-          <span className="text-sm font-bold text-white">Business Command Center</span>
+          <span className="text-sm font-bold text-white">{txt.title}</span>
           <span className="flex items-center gap-1 text-xs text-blue-200">
-            <Wifi className="w-2.5 h-2.5" /> Live
+            <Wifi className="w-2.5 h-2.5" /> {txt.live}
           </span>
         </div>
         <Link
           href="/business"
           className="flex items-center gap-1 text-xs font-semibold text-blue-100 hover:text-white transition-colors"
         >
-          Full Portal <ChevronRight className="w-3.5 h-3.5" />
+          {txt.fullPortal} <ChevronRight className="w-3.5 h-3.5" />
         </Link>
       </div>
 
       {/* Driver status strip */}
       <div className="bg-blue-700/50 dark:bg-blue-900/40 px-4 py-3">
         {loadingDrivers ? (
-          <p className="text-xs text-blue-200">Loading fleet status...</p>
+          <p className="text-xs text-blue-200">{txt.loading}</p>
         ) : drivers.length === 0 ? (
           <div className="flex items-center justify-between">
-            <p className="text-xs text-blue-200">No drivers added yet.</p>
+            <p className="text-xs text-blue-200">{txt.noDrivers}</p>
             <Link href="/business" className="text-xs font-semibold text-white underline underline-offset-2">
-              Add your first driver →
+              {txt.addFirst}
             </Link>
           </div>
         ) : (
@@ -105,15 +134,15 @@ export function BusinessCommandWidget() {
             <div className="grid grid-cols-3 gap-2 mb-3">
               <div className="bg-blue-500/40 rounded-xl px-2 py-1.5 text-center">
                 <p className="text-lg font-bold text-white">{active.length}</p>
-                <p className="text-xs text-blue-200">Active</p>
+                <p className="text-xs text-blue-200">{txt.active}</p>
               </div>
               <div className="bg-blue-500/40 rounded-xl px-2 py-1.5 text-center">
                 <p className="text-lg font-bold text-white">{cleared.length}</p>
-                <p className="text-xs text-blue-200">Cleared</p>
+                <p className="text-xs text-blue-200">{txt.cleared}</p>
               </div>
               <div className="bg-blue-500/40 rounded-xl px-2 py-1.5 text-center">
                 <p className="text-lg font-bold text-white">{drivers.length}</p>
-                <p className="text-xs text-blue-200">Total</p>
+                <p className="text-xs text-blue-200">{txt.total}</p>
               </div>
             </div>
 
@@ -133,14 +162,14 @@ export function BusinessCommandWidget() {
                   <div className="text-right">
                     <p className="text-xs font-medium text-blue-100">{STATUS_LABEL[driver.current_status] || driver.current_status}</p>
                     {driver.last_checkin_at && (
-                      <p className="text-xs text-blue-300">{timeAgo(driver.last_checkin_at)}</p>
+                      <p className="text-xs text-blue-300">{timeAgo(driver.last_checkin_at, lang)}</p>
                     )}
                   </div>
                 </div>
               ))}
               {drivers.length > 4 && (
                 <Link href="/business" className="block text-center text-xs text-blue-200 hover:text-white py-1">
-                  +{drivers.length - 4} more drivers →
+                  {txt.moreDrivers(drivers.length - 4)}
                 </Link>
               )}
             </div>
@@ -152,15 +181,15 @@ export function BusinessCommandWidget() {
       <div className="grid grid-cols-3 divide-x divide-blue-500/40 border-t border-blue-500/30">
         <Link href="/business?tab=dispatch" className="flex flex-col items-center py-2.5 hover:bg-blue-700/40 transition-colors">
           <Truck className="w-3.5 h-3.5 text-blue-200 mb-0.5" />
-          <span className="text-xs text-blue-100 font-medium">Dispatch</span>
+          <span className="text-xs text-blue-100 font-medium">{txt.dispatch}</span>
         </Link>
         <Link href="/business?tab=shipments" className="flex flex-col items-center py-2.5 hover:bg-blue-700/40 transition-colors">
           <span className="text-sm mb-0.5">📦</span>
-          <span className="text-xs text-blue-100 font-medium">Loads</span>
+          <span className="text-xs text-blue-100 font-medium">{txt.loads}</span>
         </Link>
         <Link href="/business?tab=costs" className="flex flex-col items-center py-2.5 hover:bg-blue-700/40 transition-colors">
           <span className="text-sm mb-0.5">💰</span>
-          <span className="text-xs text-blue-100 font-medium">Costs</span>
+          <span className="text-xs text-blue-100 font-medium">{txt.costs}</span>
         </Link>
       </div>
     </div>

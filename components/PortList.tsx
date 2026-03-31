@@ -195,7 +195,7 @@ export function PortList() {
               {Object.entries(grouped).map(([region, regionPorts]) => (
                 <div key={region}>
                   <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">
-                    {region}
+                    {region === 'Other' ? (lang === 'es' ? 'Otros' : 'Other') : region}
                   </h2>
                   <div className="space-y-3">
                     {regionPorts.map(port => (
