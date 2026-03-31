@@ -4,6 +4,7 @@ import Script from "next/script";
 import { LangProvider } from "@/lib/LangContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import { Footer } from "@/components/Footer";
+import { BottomNav } from "@/components/BottomNav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -71,8 +72,12 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <LangProvider>
-            {children}
+            {/* Extra bottom padding on mobile so content clears the tab bar */}
+            <div className="flex-1 pb-16 sm:pb-0">
+              {children}
+            </div>
             <Footer />
+            <BottomNav />
           </LangProvider>
         </ThemeProvider>
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT && (
