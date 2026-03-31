@@ -15,7 +15,7 @@ type Direction = 'entering_us' | 'entering_mexico'
 
 export function PortList() {
   const router = useRouter()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [ports, setPorts] = useState<PortWaitTime[]>([])
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [cbpUpdatedAt, setCbpUpdatedAt] = useState<string | null>(null)
@@ -151,13 +151,17 @@ export function PortList() {
           </div>
 
           <div className="mb-4">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1">
+              📍 {lang === 'es' ? '¿En qué ciudad estás cruzando?' : 'Where are you crossing?'}
+            </p>
             <select
               value={selectedRegion}
               onChange={e => setSelectedRegion(e.target.value)}
               className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {ALL_REGIONS.map(r => (
-                <option key={r} value={r}>{r === 'All' ? t.allRegions : r}</option>
+              <option value="All">{lang === 'es' ? '🗺️ Ver todos los cruces' : '🗺️ Show all crossings'}</option>
+              {ALL_REGIONS.filter(r => r !== 'All' && r !== 'Other').map(r => (
+                <option key={r} value={r}>{r}</option>
               ))}
             </select>
           </div>

@@ -18,13 +18,13 @@ export default async function PortDetailPage({ params }: Props) {
   if (!port) notFound()
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-lg mx-auto px-4 pb-10">
         <div className="pt-6 pb-4">
-          <Link href="/" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-4">
-            <ArrowLeft className="w-4 h-4" /> All crossings
+          <Link href="/" className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-4">
+            <ArrowLeft className="w-4 h-4" /> All crossings · Todos los cruces
           </Link>
-          <h1 className="text-xl font-bold text-gray-900">{port.portName}</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{port.portName}</h1>
           <p className="text-sm text-gray-400">{port.crossingName}</p>
         </div>
 

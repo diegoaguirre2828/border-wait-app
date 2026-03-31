@@ -84,14 +84,31 @@ export function BorderMap({ ports, selectedRegion, onPortClick }: Props) {
           fillOpacity: 0.9,
         })
 
+        const fmt = (v: number | null) => v !== null ? `${v} min` : '—'
         marker.bindPopup(`
-          <div style="font-family:sans-serif;min-width:140px">
+          <div style="font-family:sans-serif;min-width:160px;padding:2px 0">
             <strong style="font-size:13px">${port.portName}</strong><br/>
-            <span style="font-size:11px;color:#666">${port.crossingName}</span><br/>
-            <div style="margin-top:6px;font-size:12px">
-              🚗 Car: <strong>${wait !== null ? wait + ' min' : 'N/A'}</strong><br/>
-              🚶 Walk: <strong>${port.pedestrian !== null ? port.pedestrian + ' min' : 'N/A'}</strong><br/>
-              ⚡ SENTRI: <strong>${port.sentri !== null ? port.sentri + ' min' : 'N/A'}</strong>
+            <span style="font-size:11px;color:#888">${port.crossingName}</span>
+            <div style="margin-top:8px;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+              <div style="background:#f8f8f8;border-radius:8px;padding:6px;text-align:center">
+                <div style="font-size:10px;color:#888">🚗 Auto/Car</div>
+                <div style="font-weight:700">${fmt(port.vehicle)}</div>
+              </div>
+              <div style="background:#f8f8f8;border-radius:8px;padding:6px;text-align:center">
+                <div style="font-size:10px;color:#888">🚛 Camión/Truck</div>
+                <div style="font-weight:700">${fmt(port.commercial)}</div>
+              </div>
+              <div style="background:#f8f8f8;border-radius:8px;padding:6px;text-align:center">
+                <div style="font-size:10px;color:#888">🚶 Peatón/Walk</div>
+                <div style="font-weight:700">${fmt(port.pedestrian)}</div>
+              </div>
+              <div style="background:#f8f8f8;border-radius:8px;padding:6px;text-align:center">
+                <div style="font-size:10px;color:#888">⚡ SENTRI</div>
+                <div style="font-weight:700">${fmt(port.sentri)}</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;text-align:center">
+              <span style="font-size:11px;color:#3b82f6;cursor:pointer">Ver detalles / Details →</span>
             </div>
           </div>
         `)

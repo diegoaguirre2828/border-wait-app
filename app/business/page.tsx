@@ -9,9 +9,30 @@ import { getPortMeta } from '@/lib/portMeta'
 import {
   ArrowLeft, RefreshCw, Package, Truck, Clock, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, Plus, X, Pencil, DollarSign, Users, Map,
-  ChevronDown, ChevronUp, Filter, Download
+  ChevronDown, ChevronUp, Filter, Download, Link2, UserCheck, Phone
 } from 'lucide-react'
 import type { PortWaitTime } from '@/types'
+
+interface Driver {
+  id: string
+  name: string
+  phone: string | null
+  carrier: string | null
+  checkin_token: string
+  current_status: string
+  current_port_id: string | null
+  last_checkin_at: string | null
+  notes: string | null
+}
+
+const DRIVER_STATUS: Record<string, { label: string; labelEs: string; emoji: string; color: string; dot: string }> = {
+  available:  { label: 'Available',   labelEs: 'Disponible',   emoji: '🟢', color: 'text-gray-500',   dot: 'bg-gray-400' },
+  en_route:   { label: 'En Route',    labelEs: 'En Camino',    emoji: '🚛', color: 'text-blue-600',   dot: 'bg-blue-400' },
+  in_line:    { label: 'In Line',     labelEs: 'En Fila',      emoji: '⏳', color: 'text-yellow-600', dot: 'bg-yellow-400 animate-pulse' },
+  at_bridge:  { label: 'At Bridge',   labelEs: 'En el Puente', emoji: '🌉', color: 'text-orange-600', dot: 'bg-orange-400 animate-pulse' },
+  cleared:    { label: 'Cleared',     labelEs: 'Pasó',         emoji: '✅', color: 'text-green-600',  dot: 'bg-green-400' },
+  delivered:  { label: 'Delivered',   labelEs: 'Entregado',    emoji: '📦', color: 'text-gray-500',   dot: 'bg-gray-300' },
+}
 
 interface Shipment {
   id: string
@@ -58,13 +79,18 @@ export default function BusinessPortalPage() {
 
   const [ports, setPorts] = useState<PortWaitTime[]>([])
   const [shipments, setShipments] = useState<Shipment[]>([])
+  const [drivers, setDrivers] = useState<Driver[]>([])
   const [tier, setTier] = useState<string>('')
   const [cbpUpdatedAt, setCbpUpdatedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'dispatch' | 'shipments' | 'costs' | 'intel'>('dispatch')
+  const [activeTab, setActiveTab] = useState<'dispatch' | 'drivers' | 'shipments' | 'costs' | 'intel'>('drivers')
   const [statusFilter, setStatusFilter] = useState('all')
   const [showAddShipment, setShowAddShipment] = useState(false)
   const [editingShipment, setEditingShipment] = useState<Shipment | null>(null)
+  const [showAddDriver, setShowAddDriver] = useState(false)
+  const [driverForm, setDriverForm] = useState({ name: '', phone: '', carrier: '', notes: '' })
+  const [savingDriver, setSavingDriver] = useState(false)
+  const [copiedToken, setCopiedToken] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [costDelay, setCostDelay] = useState(60)
   const [costTrucks, setCostTrucks] = useState(5)
@@ -94,6 +120,14 @@ export default function BusinessPortalPage() {
     }
   }, [statusFilter])
 
+  const loadDrivers = useCallback(async () => {
+    const res = await fetch('/api/business/drivers')
+    if (res.ok) {
+      const d = await res.json()
+      setDrivers(d.drivers || [])
+    }
+  }, [])
+
   useEffect(() => {
     if (!authLoading && !user) router.push('/login')
     if (user) {
@@ -102,11 +136,45 @@ export default function BusinessPortalPage() {
         setTier(t)
         if (t !== 'business') router.push('/pricing')
       })
-      Promise.all([loadPorts(), loadShipments()]).then(() => setLoading(false))
+      Promise.all([loadPorts(), loadShipments(), loadDrivers()]).then(() => setLoading(false))
     }
   }, [user, authLoading, router, loadPorts, loadShipments])
 
   useEffect(() => { loadShipments() }, [statusFilter, loadShipments])
+
+  async function saveDriver() {
+    setSavingDriver(true)
+    await fetch('/api/business/drivers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(driverForm),
+    })
+    setSavingDriver(false)
+    setShowAddDriver(false)
+    setDriverForm({ name: '', phone: '', carrier: '', notes: '' })
+    loadDrivers()
+  }
+
+  async function deleteDriver(id: string) {
+    await fetch(`/api/business/drivers?id=${id}`, { method: 'DELETE' })
+    loadDrivers()
+  }
+
+  function copyCheckinLink(token: string) {
+    const url = `${window.location.origin}/checkin/${token}`
+    navigator.clipboard.writeText(url)
+    setCopiedToken(token)
+    setTimeout(() => setCopiedToken(null), 2500)
+  }
+
+  function timeAgo(iso: string | null): string {
+    if (!iso) return 'Never'
+    const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins}m ago`
+    if (mins < 1440) return `${Math.round(mins / 60)}h ago`
+    return `${Math.round(mins / 1440)}d ago`
+  }
 
   async function saveShipment() {
     setSaving(true)
@@ -217,7 +285,7 @@ export default function BusinessPortalPage() {
             {cbpTime && <p className="text-xs text-gray-400">Live data · CBP updated {cbpTime}</p>}
           </div>
           <button
-            onClick={() => { loadPorts(); loadShipments() }}
+            onClick={() => { loadPorts(); loadShipments(); loadDrivers() }}
             className="p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             <RefreshCw className="w-4 h-4" />
@@ -241,17 +309,18 @@ export default function BusinessPortalPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-5 gap-1">
+        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-5 gap-1 overflow-x-auto">
           {[
+            { key: 'drivers',   label: '👥 Drivers' },
             { key: 'dispatch',  label: '🗺️ Dispatch' },
-            { key: 'shipments', label: '📦 Shipments' },
-            { key: 'costs',     label: '💰 Cost Calc' },
+            { key: 'shipments', label: '📦 Loads' },
+            { key: 'costs',     label: '💰 Costs' },
             { key: 'intel',     label: '📡 Intel' },
           ].map(t => (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key as typeof activeTab)}
-              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
+              className={`flex-shrink-0 py-2 px-3 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
                 activeTab === t.key
                   ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-gray-100'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -261,6 +330,185 @@ export default function BusinessPortalPage() {
             </button>
           ))}
         </div>
+
+        {/* ── DRIVERS TAB ── */}
+        {activeTab === 'drivers' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Driver Tracking Board</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Send each driver a check-in link. They tap to update their status — no app download needed.</p>
+              </div>
+              <button
+                onClick={() => setShowAddDriver(true)}
+                className="flex items-center gap-1 text-xs font-semibold bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2 rounded-xl hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors flex-shrink-0 ml-3"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Driver
+              </button>
+            </div>
+
+            {/* Add driver form */}
+            {showAddDriver && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Add Driver</h3>
+                  <button onClick={() => setShowAddDriver(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  <input
+                    value={driverForm.name}
+                    onChange={e => setDriverForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Driver name *"
+                    className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      value={driverForm.phone}
+                      onChange={e => setDriverForm(f => ({ ...f, phone: e.target.value }))}
+                      placeholder="Phone (optional)"
+                      className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      value={driverForm.carrier}
+                      onChange={e => setDriverForm(f => ({ ...f, carrier: e.target.value }))}
+                      placeholder="Carrier (optional)"
+                      className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={saveDriver}
+                    disabled={savingDriver || !driverForm.name}
+                    className="flex-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-700 disabled:opacity-40 transition-colors"
+                  >
+                    {savingDriver ? 'Saving...' : 'Add Driver'}
+                  </button>
+                  <button onClick={() => setShowAddDriver(false)} className="px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm rounded-xl">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* How it works */}
+            {drivers.length === 0 && !showAddDriver && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-5">
+                <p className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">How driver tracking works</p>
+                <ol className="space-y-2">
+                  {[
+                    'Add your drivers above',
+                    'Copy each driver\'s unique check-in link',
+                    'Send the link via WhatsApp or SMS',
+                    'Drivers tap the link to update their status — no account needed',
+                    'See all drivers live on this board',
+                  ].map((step, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-blue-700 dark:text-blue-300">
+                      <span className="font-bold flex-shrink-0">{i + 1}.</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Drivers list */}
+            {drivers.length > 0 && (
+              <>
+                {/* Status summary */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'In transit', count: drivers.filter(d => ['en_route','in_line','at_bridge'].includes(d.current_status)).length, color: 'text-yellow-600' },
+                    { label: 'Cleared today', count: drivers.filter(d => d.current_status === 'cleared').length, color: 'text-green-600' },
+                    { label: 'Available', count: drivers.filter(d => d.current_status === 'available').length, color: 'text-gray-500' },
+                  ].map(item => (
+                    <div key={item.label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-center">
+                      <p className={`text-2xl font-bold ${item.color}`}>{item.count}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{item.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  {drivers.map(driver => {
+                    const statusCfg = DRIVER_STATUS[driver.current_status] || DRIVER_STATUS.available
+                    const portName = driver.current_port_id
+                      ? ports.find(p => p.portId === driver.current_port_id)?.portName
+                      : null
+                    const currentWait = driver.current_port_id
+                      ? ports.find(p => p.portId === driver.current_port_id)?.commercial
+                      : null
+                    const isCopied = copiedToken === driver.checkin_token
+
+                    return (
+                      <div key={driver.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <span className="text-xl mt-0.5">{statusCfg.emoji}</span>
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{driver.name}</p>
+                                <span className={`text-xs font-medium ${statusCfg.color}`}>
+                                  {statusCfg.label} · {statusCfg.labelEs}
+                                </span>
+                              </div>
+                              {driver.carrier && <p className="text-xs text-gray-400">{driver.carrier}</p>}
+                              {driver.phone && (
+                                <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                                  <Phone className="w-3 h-3" />{driver.phone}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                {portName && (
+                                  <span className="text-xs text-gray-400">
+                                    📍 {portName} {currentWait !== null && currentWait !== undefined ? `· ${currentWait}m truck` : ''}
+                                  </span>
+                                )}
+                                <span className="text-xs text-gray-400">
+                                  <Clock className="w-3 h-3 inline mr-0.5" />
+                                  {timeAgo(driver.last_checkin_at)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => copyCheckinLink(driver.checkin_token)}
+                              className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border transition-colors ${
+                                isCopied
+                                  ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400'
+                                  : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                              }`}
+                              title="Copy check-in link to send to driver"
+                            >
+                              <Link2 className="w-3 h-3" />
+                              {isCopied ? 'Copied!' : 'Link'}
+                            </button>
+                            <button
+                              onClick={() => deleteDriver(driver.id)}
+                              className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-4 text-center">
+                  <p className="text-xs text-gray-400">
+                    Share each driver's link via <strong>WhatsApp</strong> or SMS.<br />
+                    They update their status — you see it here instantly.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* ── DISPATCH TAB ── */}
         {activeTab === 'dispatch' && (

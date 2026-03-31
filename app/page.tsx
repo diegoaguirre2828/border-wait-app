@@ -3,6 +3,7 @@
 import { PortList } from '@/components/PortList'
 import { NavBar } from '@/components/NavBar'
 import { GuestAds } from '@/components/GuestAds'
+import { HomeReportsFeed } from '@/components/HomeReportsFeed'
 import { useLang } from '@/lib/LangContext'
 import Link from 'next/link'
 
@@ -35,14 +36,20 @@ export default function HomePage() {
         {/* Smart Planner promo banner */}
         <Link href="/predict" className="flex items-center justify-between bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl px-4 py-3 mb-4 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
           <div>
-            <p className="text-xs font-bold text-purple-800 dark:text-purple-300">🔮 Smart Crossing Planner</p>
-            <p className="text-xs text-purple-600 dark:text-purple-400">See the best time to cross — any port, any day</p>
+            <p className="text-xs font-bold text-purple-800 dark:text-purple-300">{t.plannerBannerTitle}</p>
+            <p className="text-xs text-purple-600 dark:text-purple-400">{t.plannerBannerSub}</p>
           </div>
-          <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 flex-shrink-0 ml-3">Try it →</span>
+          <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 flex-shrink-0 ml-3">{t.plannerTry}</span>
         </Link>
 
         <GuestAds />
         <PortList />
+
+        {/* Live community reports at the bottom */}
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{t.recentReports}</h2>
+          <HomeReportsFeed />
+        </div>
       </div>
     </main>
   )

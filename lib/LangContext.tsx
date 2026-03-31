@@ -12,7 +12,15 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem('cruza_lang') as Lang | null
-    if (saved === 'es' || saved === 'en') setLang(saved)
+    if (saved === 'es' || saved === 'en') {
+      setLang(saved)
+    } else {
+      // Auto-detect: default to Spanish if browser language is Spanish
+      const browserLang = navigator.language || (navigator.languages?.[0] ?? 'en')
+      if (browserLang.toLowerCase().startsWith('es')) {
+        setLang('es')
+      }
+    }
   }, [])
 
   function toggle() {
