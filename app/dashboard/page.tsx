@@ -10,6 +10,7 @@ import { getPortMeta } from '@/lib/portMeta'
 import { getWaitLevel, waitLevelDot } from '@/lib/cbp'
 import { WaitBadge } from '@/components/WaitBadge'
 import { Bell, Star, LogOut, Map, Plus, Trash2, Route, Settings, Lock, Navigation } from 'lucide-react'
+import { PushToggle } from '@/components/PushToggle'
 import type { PortWaitTime } from '@/types'
 
 interface SavedCrossing {
@@ -35,6 +36,8 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<'crossings' | 'alerts' | 'route'>('crossings')
   const [newAlertPortId, setNewAlertPortId] = useState('')
   const [newAlertThreshold, setNewAlertThreshold] = useState(20)
+  const [newAlertPhone, setNewAlertPhone] = useState('')
+  const [newAlertLane, setNewAlertLane] = useState('vehicle')
   const [origin, setOrigin] = useState('McAllen')
   interface RouteResult {
     best: { portId: string; portName: string; crossingName: string; vehicleWait: number | null; commercialWait: number | null; recommendation: string } | null
@@ -86,7 +89,7 @@ export default function DashboardPage() {
     await fetch('/api/alerts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ portId: newAlertPortId, laneType: 'vehicle', thresholdMinutes: newAlertThreshold }),
+      body: JSON.stringify({ portId: newAlertPortId, laneType: newAlertLane, thresholdMinutes: newAlertThreshold, phone: newAlertPhone || null }),
     })
     loadData()
   }
@@ -252,14 +255,17 @@ export default function DashboardPage() {
 
         {tab === 'alerts' && tier !== 'free' && (
           <div className="space-y-4">
+            {/* Push notification toggle */}
+            <PushToggle />
+
             {/* Add alert */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Add Alert</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Add Alert</h3>
               <div className="space-y-3">
                 <select
                   value={newAlertPortId}
                   onChange={e => setNewAlertPortId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select a crossing...</option>
                   {ports.map(p => (
@@ -268,21 +274,38 @@ export default function DashboardPage() {
                     </option>
                   ))}
                 </select>
+                <select
+                  value={newAlertLane}
+                  onChange={e => setNewAlertLane(e.target.value)}
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="vehicle">Passenger Vehicle</option>
+                  <option value="sentri">SENTRI / Ready Lane</option>
+                  <option value="pedestrian">Pedestrian</option>
+                  <option value="commercial">Commercial / Truck</option>
+                </select>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 whitespace-nowrap">Notify when under</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Notify when under</span>
                   <input
                     type="number"
                     value={newAlertThreshold}
                     onChange={e => setNewAlertThreshold(Number(e.target.value))}
                     min={5} max={120}
-                    className="w-20 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-20 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-600">min</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">min</span>
                 </div>
+                <input
+                  type="tel"
+                  value={newAlertPhone}
+                  onChange={e => setNewAlertPhone(e.target.value)}
+                  placeholder="SMS phone (optional) e.g. +15551234567"
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
                 <button
                   onClick={addAlert}
                   disabled={!newAlertPortId}
-                  className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white text-sm font-medium py-2.5 rounded-xl hover:bg-gray-700 disabled:opacity-40 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 bg-gray-900 dark:bg-gray-100 dark:text-gray-900 text-white text-sm font-medium py-2.5 rounded-xl hover:bg-gray-700 dark:hover:bg-gray-200 disabled:opacity-40 transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Add Alert
                 </button>

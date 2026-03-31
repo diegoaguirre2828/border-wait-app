@@ -13,6 +13,7 @@ export function Footer() {
           <Link href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Terms</Link>
           <Link href="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Privacy</Link>
           <Link href="/advertise" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Advertise</Link>
+          <Link href="/widget" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Widget</Link>
           <Link href="/pricing" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Pricing</Link>
           <a href="mailto:cruzabusiness@gmail.com" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Contact</a>
         </div>

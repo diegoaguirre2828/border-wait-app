@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
+import webpush from 'web-push'
+
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:cruzabusiness@gmail.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  )
+}
 
 async function sendEmail(email: string, portName: string, portId: string, wait: number, threshold: number) {
   if (!process.env.RESEND_API_KEY) return
-
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -35,6 +43,47 @@ async function sendEmail(email: string, portName: string, portId: string, wait: 
   })
 }
 
+async function sendPush(userId: string, portName: string, portId: string, wait: number) {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return
+  const db = getServiceClient()
+  const { data: sub } = await db
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('user_id', userId)
+    .single()
+
+  if (!sub?.endpoint) return
+
+  try {
+    await webpush.sendNotification(
+      { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+      JSON.stringify({
+        title: `🌉 ${portName} — ${wait} min wait`,
+        body: `Wait dropped below your threshold. Tap to view live times.`,
+        url: `/port/${encodeURIComponent(portId)}`,
+        tag: `alert-${portId}`,
+      })
+    )
+  } catch (err: unknown) {
+    // Subscription expired — remove it
+    if (err && typeof err === 'object' && 'statusCode' in err && (err as { statusCode: number }).statusCode === 410) {
+      await db.from('push_subscriptions').delete().eq('user_id', userId)
+    }
+  }
+}
+
+async function sendSms(phone: string, portName: string, portId: string, wait: number) {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_PHONE_NUMBER) return
+  const url = `https://cruzaapp.vercel.app/port/${encodeURIComponent(portId)}`
+  const body = `🌉 Cruza Alert: ${portName} is now ${wait} min. ${url}`
+  const auth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')
+  await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`, {
+    method: 'POST',
+    headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ To: phone, From: process.env.TWILIO_PHONE_NUMBER, Body: body }).toString(),
+  })
+}
+
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   const secret = req.nextUrl.searchParams.get('secret')
@@ -42,15 +91,12 @@ export async function GET(req: NextRequest) {
     secret === process.env.CRON_SECRET ||
     authHeader === `Bearer ${process.env.CRON_SECRET}`
 
-  if (!isAuthed) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (!isAuthed) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const supabase = getServiceClient()
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
 
-    // Get alerts not triggered in the last hour
     const { data: alerts } = await supabase
       .from('alert_preferences')
       .select('*')
@@ -59,14 +105,12 @@ export async function GET(req: NextRequest) {
 
     if (!alerts?.length) return NextResponse.json({ sent: 0, checked: 0 })
 
-    // Get most recent readings (last 30 min)
     const { data: readings } = await supabase
       .from('wait_time_readings')
       .select('port_id, port_name, vehicle_wait, commercial_wait, pedestrian_wait, sentri_wait, recorded_at')
       .gte('recorded_at', new Date(Date.now() - 30 * 60 * 1000).toISOString())
       .order('recorded_at', { ascending: false })
 
-    // Latest reading per port
     const latest: Record<string, NonNullable<typeof readings>[0]> = {}
     for (const r of readings ?? []) {
       if (!latest[r.port_id]) latest[r.port_id] = r
@@ -86,11 +130,14 @@ export async function GET(req: NextRequest) {
 
       if (wait === null || wait >= alert.threshold_minutes) continue
 
-      // Get user email via admin API
       const { data: { user } } = await supabase.auth.admin.getUserById(alert.user_id)
-      if (!user?.email) continue
+      if (!user) continue
 
-      await sendEmail(user.email, reading.port_name, alert.port_id, wait, alert.threshold_minutes)
+      await Promise.all([
+        user.email ? sendEmail(user.email, reading.port_name, alert.port_id, wait, alert.threshold_minutes) : null,
+        sendPush(alert.user_id, reading.port_name, alert.port_id, wait),
+        alert.phone ? sendSms(alert.phone, reading.port_name, alert.port_id, wait) : null,
+      ])
 
       await supabase
         .from('alert_preferences')

@@ -14,14 +14,13 @@ const PLANS = [
     period: 'forever',
     color: 'border-gray-200',
     badge: null,
-    desc: 'Everything you need to stop guessing and start crossing smarter. No credit card. No catch.',
+    desc: 'Live wait times for every crossing. No credit card. No catch.',
     features: [
       'Live wait times — all 52 crossings',
       'Interactive map with color-coded wait levels',
       'Filter by city or region',
       'Crowdsourced driver reports',
-      'Save your favorite crossings',
-      'No ads when signed in',
+      'Save up to 3 favorite crossings',
     ],
     cta: 'Get Started Free',
     href: '/signup',
@@ -33,16 +32,16 @@ const PLANS = [
     period: '/month',
     color: 'border-blue-500',
     badge: 'Most Popular',
-    desc: 'For daily commuters who can\'t afford to guess. Get notified the moment your crossing clears up.',
+    desc: 'Stop wasting time at the border. Get notified the moment your crossing clears up — by push, SMS, or email.',
     features: [
       'Everything in Free',
-      'AI wait time predictions by day & hour',
-      'Custom alerts — get notified when wait drops below your threshold',
-      'Full route optimizer — find the fastest crossing right now',
+      '🔔 Push + SMS + email alerts when wait drops',
+      '🤖 AI predictions — best time to cross today',
+      '🗺️ Route optimizer — fastest crossing near you right now',
       'Unlimited saved crossings',
-      '7-day free trial, cancel anytime',
+      '7-day free trial · cancel anytime',
     ],
-    cta: 'Start Free Trial',
+    cta: 'Start 7-Day Free Trial',
     tier: 'pro',
   },
   {
@@ -52,15 +51,15 @@ const PLANS = [
     period: '/month',
     color: 'border-gray-900',
     badge: 'For Freight & Logistics',
-    desc: 'Built for operators moving freight across the border daily. Save hours, cut fuel costs, keep your fleet moving.',
+    desc: 'One delayed truck costs more than this plan. Keep your fleet moving with real-time commercial lane intelligence.',
     features: [
       'Everything in Pro',
-      'Fleet manager panel — track multiple drivers at once',
-      'Commercial & FAST lane focus',
-      'Historical CSV data exports',
-      'API access for your own systems',
-      '90-day trend analysis',
-      'Priority support',
+      '🚛 Fleet Command Center — commercial lane focus',
+      '⚠️ Heavy delay watch list across all crossings',
+      '📥 Historical CSV exports (up to 90 days)',
+      '🔌 API access for your TMS or dispatch system',
+      '📧 Weekly border intelligence email report',
+      'Priority support via email',
     ],
     cta: 'Start Free Trial',
     tier: 'business',
@@ -162,10 +161,32 @@ export default function PricingPage() {
           })}
         </div>
 
+        {/* ROI calculator */}
+        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base mb-3">💡 How much is border wait time costing you?</h3>
+          <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+            <div className="flex justify-between">
+              <span>Daily commuter · 30 min wasted/day</span>
+              <span className="font-semibold">~$300/mo in lost time</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Freight truck · 1 extra hour at border</span>
+              <span className="font-semibold">~$75–150 per crossing</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Fleet of 5 trucks · 3 crossings/week each</span>
+              <span className="font-semibold">~$4,500/mo at risk</span>
+            </div>
+          </div>
+          <p className="text-xs text-blue-600 dark:text-blue-400 mt-3 font-medium">
+            Pro pays for itself the first time it saves you 20 minutes. Business pays for itself on a single truck.
+          </p>
+        </div>
+
         {/* Business advertise CTA */}
-        <div className="mt-8 bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-          <h3 className="font-bold text-gray-900 text-lg">Own a local business near the border?</h3>
-          <p className="text-gray-600 text-sm mt-1">
+        <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 text-center">
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg">Own a local business near the border?</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
             Advertise to thousands of daily cross-border commuters. Starting at $49/month.
           </p>
           <Link
