@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -74,7 +74,7 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + formatTime(iso)
 }
 
-export default function BusinessPortalPage() {
+function BusinessPortalPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -992,5 +992,14 @@ export default function BusinessPortalPage() {
         )}
       </div>
     </main>
+  )
+}
+
+
+export default function BusinessPortalPageWrapper() {
+  return (
+    <Suspense>
+      <BusinessPortalPage />
+    </Suspense>
   )
 }
