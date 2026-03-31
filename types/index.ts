@@ -34,6 +34,10 @@ export interface PortWaitTime {
   sentri: number | null
   pedestrian: number | null
   commercial: number | null
+  vehicleLanesOpen: number | null
+  sentriLanesOpen: number | null
+  pedestrianLanesOpen: number | null
+  commercialLanesOpen: number | null
   recordedAt: string
 }
 

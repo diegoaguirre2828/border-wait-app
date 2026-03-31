@@ -19,6 +19,12 @@ const RGV_PORT_IDS = new Set([
   '230701', // Laredo - World Trade Bridge
 ])
 
+function parseLanes(value: string | undefined): number | null {
+  if (!value || value === 'N/A') return null
+  const n = parseInt(value, 10)
+  return isNaN(n) ? null : n
+}
+
 function parseWait(value: string | undefined): number | null {
   // N/A or missing means CBP has no data for this lane type (closed or not present)
   if (value === undefined || value === null || value === 'N/A') return null
@@ -49,6 +55,10 @@ export async function fetchRgvWaitTimes(): Promise<PortWaitTime[]> {
       sentri: parseWait(p.passenger_vehicle_lanes?.nexus_sentri_lanes?.delay_minutes),
       pedestrian: parseWait(p.pedestrian_lanes?.standard_lanes?.delay_minutes),
       commercial: parseWait(p.commercial_vehicle_lanes?.standard_lanes?.delay_minutes),
+      vehicleLanesOpen: parseLanes(p.passenger_vehicle_lanes?.standard_lanes?.lanes_open),
+      sentriLanesOpen: parseLanes(p.passenger_vehicle_lanes?.nexus_sentri_lanes?.lanes_open),
+      pedestrianLanesOpen: parseLanes(p.pedestrian_lanes?.standard_lanes?.lanes_open),
+      commercialLanesOpen: parseLanes(p.commercial_vehicle_lanes?.standard_lanes?.lanes_open),
       recordedAt: p.date_time,
     }))
 }

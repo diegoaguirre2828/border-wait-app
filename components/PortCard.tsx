@@ -21,8 +21,12 @@ export function PortCard({ port }: Props) {
   const primaryWait = port.vehicle ?? port.pedestrian
   const [shared, setShared] = useState(false)
 
+  // Use actual lanes open for accuracy if available (0.7 cars/min/lane avg)
+  // Fallback: assume ~3 cars/min total (typical 4-lane crossing at 0.75/lane)
   const carsAhead = primaryWait !== null && primaryWait > 0
-    ? Math.round(primaryWait * 3)
+    ? port.vehicleLanesOpen && port.vehicleLanesOpen > 0
+      ? Math.round(primaryWait * port.vehicleLanesOpen * 0.7)
+      : Math.round(primaryWait * 3)
     : null
 
   function handleShare(e: React.MouseEvent) {
@@ -72,7 +76,7 @@ export function PortCard({ port }: Props) {
                       <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">min</span>
                     </div>
                     {carsAhead !== null && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 text-right">~{carsAhead} cars</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 text-right">{t.carsAhead(carsAhead)}</p>
                     )}
                   </>
                 )}
@@ -90,10 +94,10 @@ export function PortCard({ port }: Props) {
 
         {!allNull ? (
           <div className="flex gap-3 mt-2 justify-around">
-            {port.vehicle !== null && <WaitBadge minutes={port.vehicle} label={t.laneCar} />}
-            {port.sentri !== null && <WaitBadge minutes={port.sentri} label={t.laneSentri} />}
-            {port.pedestrian !== null && <WaitBadge minutes={port.pedestrian} label={t.laneWalk} />}
-            {port.commercial !== null && <WaitBadge minutes={port.commercial} label={t.laneTruck} />}
+            {port.vehicle !== null && <WaitBadge minutes={port.vehicle} label={t.laneCar} lanesOpen={port.vehicleLanesOpen} />}
+            {port.sentri !== null && <WaitBadge minutes={port.sentri} label={t.laneSentri} lanesOpen={port.sentriLanesOpen} />}
+            {port.pedestrian !== null && <WaitBadge minutes={port.pedestrian} label={t.laneWalk} lanesOpen={port.pedestrianLanesOpen} />}
+            {port.commercial !== null && <WaitBadge minutes={port.commercial} label={t.laneTruck} lanesOpen={port.commercialLanesOpen} />}
           </div>
         ) : (
           <div className="flex items-center justify-center gap-1.5 mt-2 py-1">
