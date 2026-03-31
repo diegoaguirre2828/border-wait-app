@@ -169,10 +169,13 @@ export function PortList() {
           {/* Legend */}
           <div className="flex items-center gap-4 mb-3 px-1">
             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-              <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /> Live data
+              <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /> No / low wait
             </div>
             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-              <span className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0" /> No data / closed
+              <span className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0" /> 20–45 min
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" /> 45+ min
             </div>
           </div>
 

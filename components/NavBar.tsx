@@ -67,28 +67,26 @@ export function NavBar() {
         </Link>
       )}
 
-      {user ? (
+      {user && !isBusiness ? (
         <Link
-          href={isBusiness ? '/business' : '/dashboard'}
+          href="/dashboard"
           className={`flex items-center gap-1 text-xs font-medium text-white px-3 py-1.5 rounded-xl transition-colors ${
-            isBusiness
-              ? 'bg-blue-600 hover:bg-blue-700'
-              : isPro
+            isPro
               ? 'bg-purple-600 hover:bg-purple-700'
               : 'bg-gray-900 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600'
           }`}
         >
           <User className="w-3 h-3" />
-          {isBusiness ? (lang === 'es' ? 'Empresa' : 'Business') : isPro ? 'Pro' : t.me}
+          {isPro ? 'Pro' : t.me}
         </Link>
-      ) : (
+      ) : !user ? (
         <Link
           href="/signup"
           className="text-xs font-medium text-white bg-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
         >
           {t.signUpFree}
         </Link>
-      )}
+      ) : null}
     </div>
   )
 }
