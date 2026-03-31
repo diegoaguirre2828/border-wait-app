@@ -6,7 +6,7 @@ import { useLang } from '@/lib/LangContext'
 import { useAuth } from '@/lib/useAuth'
 
 // Pages where the bottom nav should not appear
-const HIDDEN_PATHS = ['/login', '/signup', '/dashboard', '/account', '/business', '/advertise', '/admin']
+const HIDDEN_PATHS = ['/login', '/signup', '/dashboard', '/account', '/business', '/advertise', '/admin', '/driver']
 
 export function BottomNav() {
   const pathname = usePathname()

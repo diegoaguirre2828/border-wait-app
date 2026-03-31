@@ -164,7 +164,7 @@ function BusinessPortalPage() {
   }
 
   function copyCheckinLink(token: string) {
-    const url = `${window.location.origin}/checkin/${token}`
+    const url = `${window.location.origin}/driver/${token}`
     navigator.clipboard.writeText(url)
     setCopiedToken(token)
     setTimeout(() => setCopiedToken(null), 2500)
